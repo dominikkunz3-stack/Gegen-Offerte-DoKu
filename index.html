@@ -243,16 +243,15 @@ textarea.inp{min-height:64px;resize:vertical}
     <p class="section-text">Der Sanitas Trösch-Katalog mit <strong>24'961 Artikeln</strong> ist bereits hinterlegt. Im Abgleich-Schritt kannst du per Live-Suche direkt die passende Trösch-Artikelnummer auswählen.<br>
 <span style="color:#5CA745;font-weight:700">Optional:</span> Eigene Mapping-CSV hochladen (überschreibt den eingebetteten Katalog für automatischen Abgleich).</p>
 
-    <div class="drop-zone" id="dz-mapping"
-         ondragover="dzDragOver(event,'dz-mapping')"
-         ondragleave="dzDragLeave('dz-mapping')"
-         ondrop="dzDrop(event,'dz-mapping',handleMappingFile)">
-      <input type="file" accept=".csv,.txt" onchange="handleMappingFile(this.files[0])">
-      <div class="dz-icon">⇪</div>
-      <div class="dz-label">Mapping-CSV hier ablegen oder klicken</div>
-      <div class="dz-hint">Format: SVGW-Nr · Trösch-Nr · Bezeichnung · Marke</div>
-      <div class="dz-file" id="mapping-file-name"></div>
+    <div style="border:2px dashed #E0E6ED;border-radius:4px;padding:20px;text-align:center;background:#F4F6F9;margin-bottom:8px">
+      <div style="font-size:12px;color:#555555" id="mapping-file-name">Mapping-CSV hochladen (optional)</div>
     </div>
+    <label for="file-input-mapping" style="display:block;width:100%;padding:12px;background:#5CA745;color:#FFFFFF;border:none;border-radius:4px;font-size:14px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;text-align:center;margin-bottom:8px;box-sizing:border-box">
+      📂 Mapping-CSV auswählen (optional)
+    </label>
+    <input type="file" id="file-input-mapping" accept=".csv,.txt"
+      style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden"
+      onchange="handleMappingFile(event.target.files[0])">
 
     <div id="mapping-status"></div>
     <div class="result-count" id="mapping-count" style="display:none"></div>
@@ -845,6 +844,30 @@ function renderOfferteTable(){
       <td><input class="cell-input" style="width:78px" value="${esc(it.preis)}" onchange="S.offerteItems[${i}].preis=toNum(this.value)"></td>
       <td><button class="del-btn" onclick="removeOfferte(${i})">✕</button></td>`;
     tb.appendChild(tr);
+    // Suggestions-Zeile wenn vorhanden
+    if(row.suggestions && row.suggestions.length > 0) {
+      const trSug = document.createElement('tr');
+      trSug.style.cssText = 'background:#F4F6F9';
+      const tdSug = document.createElement('td');
+      tdSug.colSpan = 7;
+      tdSug.style.cssText = 'padding:2px 10px 6px 36px;font-size:10px;color:#555555';
+      tdSug.innerHTML = 'Weitere Vorschläge: ' + row.suggestions.map((s,si) =>
+        `<span style="color:#2E6DB4;cursor:pointer;text-decoration:underline;margin-right:6px" 
+          data-idx="${i}" data-si="${si}" title="${esc(s[1])}">${esc(s[0])}</span>`
+      ).join('');
+      tdSug.querySelectorAll('span[data-idx]').forEach(span => {
+        span.addEventListener('click', function() {
+          const idx = parseInt(this.dataset.idx);
+          const si = parseInt(this.dataset.si);
+          S.matched[idx].troeschNr = S.matched[idx].suggestions[si][0];
+          S.matched[idx].bezeichnungTroesch = S.matched[idx].suggestions[si][1];
+          S.matched[idx].gefunden = true;
+          renderMatchTable();
+        });
+      });
+      trSug.appendChild(tdSug);
+      tb.appendChild(trSug);
+    }
   });
 }
 function renderMappingPreview(){
@@ -875,6 +898,8 @@ function renderMatchTable(){
   tb.innerHTML='';
   m.forEach((row,i)=>{
     const tr=document.createElement('tr');
+    // Nach dem Render: Suggestions als separate Zeile einfügen
+    tr.dataset.idx = i;
     tr.innerHTML=`
       <td>
         <span class="${row.gefunden?'badge-ok':'badge-warn'}" title="${row.matchTyp==='csv'?'Aus Mapping-CSV':row.matchTyp==='func'?'Funktionaler Typ+Breite Match':'Kein Treffer'}">
@@ -1172,14 +1197,22 @@ function doCatalogSearch(q) {
     div.innerHTML = '<span style="color:#B94040">Keine Treffer. Anderen Begriff versuchen.</span>';
     return;
   }
-  div.innerHTML = res.map(([nr, name]) =>
-    `<div onclick="selectCatalogItem(searchRowIdx,'${nr.replace(/'/g,"\'")}','${name.replace(/'/g,"\'").replace(/"/g,"&quot;")}');closeSearch()"
-      style="padding:8px 10px;border-bottom:1px solid #E0E6ED;cursor:pointer;display:flex;gap:10px;align-items:baseline"
-      onmouseover="this.style.background='#EBF2FB'" onmouseout="this.style.background=''">
-      <span style="font-weight:700;color:#2E6DB4;white-space:nowrap;font-size:12px">${esc(nr)}</span>
-      <span>${esc(name)}</span>
-    </div>`
-  ).join('');
+  // Sicher: data-Attribute statt inline String-Interpolation
+  div.innerHTML = '';
+  res.forEach(([nr, name]) => {
+    const div2 = document.createElement('div');
+    div2.style.cssText = 'padding:8px 10px;border-bottom:1px solid #E0E6ED;cursor:pointer;display:flex;gap:10px;align-items:baseline';
+    div2.dataset.nr = nr;
+    div2.dataset.name = name;
+    div2.innerHTML = `<span style="font-weight:700;color:#2E6DB4;white-space:nowrap;font-size:12px">${esc(nr)}</span><span>${esc(name)}</span>`;
+    div2.addEventListener('click', function() {
+      selectCatalogItem(searchRowIdx, this.dataset.nr, this.dataset.name);
+      closeSearch();
+    });
+    div2.addEventListener('mouseover', function(){ this.style.background='#EBF2FB'; });
+    div2.addEventListener('mouseout', function(){ this.style.background=''; });
+    div.appendChild(div2);
+  });
 }
 
 function selectCatalogItem(rowIdx, nr, name) {
