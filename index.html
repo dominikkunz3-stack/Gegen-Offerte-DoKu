@@ -189,47 +189,34 @@ textarea.inp{min-height:64px;resize:vertical}
     <div class="field-group">
       <span class="field-label">Konkurrent</span>
       <div style="display:flex;gap:10px;margin-top:6px">
-        <label for="radio-sabag" id="label-sabag" style="
+        <div id="label-sabag" style="
           display:inline-block;padding:10px 22px;border-radius:2px;
           border:2px solid #2E6DB4;background:#2E6DB4;color:#FFFFFF;
           font-size:14px;font-weight:700;font-family:Arial,sans-serif;
-          cursor:pointer;user-select:none;-webkit-user-select:none">
+          cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.1)">
           Sabag
-        </label>
-        <input type="radio" id="radio-sabag" name="konkurrent" value="Sabag" 
-          style="position:absolute;opacity:0;width:0;height:0" checked
-          onchange="setKonkurrent('Sabag')">
-
-        <label for="radio-richner" id="label-richner" style="
+        </div>
+        <div id="label-richner" style="
           display:inline-block;padding:10px 22px;border-radius:2px;
           border:2px solid #E0E6ED;background:#FFFFFF;color:#555555;
           font-size:14px;font-weight:700;font-family:Arial,sans-serif;
-          cursor:pointer;user-select:none;-webkit-user-select:none">
+          cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.1)">
           Richner BMS
-        </label>
-        <input type="radio" id="radio-richner" name="konkurrent" value="Richner BMS"
-          style="position:absolute;opacity:0;width:0;height:0"
-          onchange="setKonkurrent('Richner BMS')">
+        </div>
       </div>
     </div>
 
-    <div class="drop-zone" id="dz-offerte"
-         ondragover="dzDragOver(event,'dz-offerte')"
-         ondragleave="dzDragLeave('dz-offerte')"
-         ondrop="dzDrop(event,'dz-offerte',handleOfferteFile)"
-         onclick="document.getElementById('file-input-offerte').click()">
-      <input type="file" id="file-input-offerte" accept=".pdf,.csv,.txt" 
-        style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer"
-        onchange="handleOfferteFile(this.files[0])">
-      <div class="dz-icon">⇪</div>
-      <div class="dz-label">PDF oder CSV antippen zum Hochladen</div>
-      <div class="dz-hint">Unterstützt: .pdf · .csv — SVGW/Team-Artikelnummern werden automatisch erkannt</div>
-      <div class="dz-file" id="offerte-file-name"></div>
+    <div style="border:2px dashed #E0E6ED;border-radius:4px;padding:28px 20px;text-align:center;background:#F4F6F9;margin-bottom:8px">
+      <div style="font-size:24px;color:#2E6DB4;margin-bottom:6px">⇪</div>
+      <div style="font-size:14px;font-weight:700;color:#2E6DB4;margin-bottom:4px">PDF oder CSV hochladen</div>
+      <div style="font-size:12px;color:#555555" id="offerte-file-name">Nutze den Button unten</div>
     </div>
-    <button onclick="document.getElementById('file-input-offerte').click()"
-      style="margin-top:8px;width:100%;padding:12px;background:#2E6DB4;color:#fff;border:none;border-radius:4px;font-size:14px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
+    <label for="file-input-offerte" style="display:block;width:100%;padding:14px;background:#2E6DB4;color:#FFFFFF;border:none;border-radius:4px;font-size:15px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;text-align:center;margin-bottom:8px;box-sizing:border-box">
       📂 Datei auswählen
-    </button>
+    </label>
+    <input type="file" id="file-input-offerte" accept=".pdf,.csv,.txt" 
+      style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden"
+      onchange="handleOfferteFile(this.files[0])">
 
     <div id="offerte-status"></div>
     <div id="offerte-debug"></div>
@@ -1130,6 +1117,18 @@ function initApp() {
   if(offrNrEl) offrNrEl.value=
     'OF-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-001';
   buildStepBar();
+
+  // Konkurrent-Schalter: addEventListener für maximale iOS-Kompatibilität
+  const ls = document.getElementById('label-sabag');
+  const lr = document.getElementById('label-richner');
+  if(ls) {
+    ls.addEventListener('click', function(){ setKonkurrent('Sabag'); });
+    ls.addEventListener('touchend', function(e){ e.preventDefault(); setKonkurrent('Sabag'); });
+  }
+  if(lr) {
+    lr.addEventListener('click', function(){ setKonkurrent('Richner BMS'); });
+    lr.addEventListener('touchend', function(e){ e.preventDefault(); setKonkurrent('Richner BMS'); });
+  }
 }
 document.addEventListener('DOMContentLoaded', initApp);
 // Fallback für iOS file:// wo DOMContentLoaded manchmal zu früh feuert
