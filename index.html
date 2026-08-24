@@ -189,20 +189,12 @@ textarea.inp{min-height:64px;resize:vertical}
     <div class="field-group">
       <span class="field-label">Konkurrent</span>
       <div style="display:flex;gap:10px;margin-top:6px">
-        <div id="label-sabag" style="
-          display:inline-block;padding:10px 22px;border-radius:2px;
-          border:2px solid #2E6DB4;background:#2E6DB4;color:#FFFFFF;
-          font-size:14px;font-weight:700;font-family:Arial,sans-serif;
-          cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.1)">
-          Sabag
-        </div>
-        <div id="label-richner" style="
-          display:inline-block;padding:10px 22px;border-radius:2px;
-          border:2px solid #E0E6ED;background:#FFFFFF;color:#555555;
-          font-size:14px;font-weight:700;font-family:Arial,sans-serif;
-          cursor:pointer;-webkit-tap-highlight-color:rgba(0,0,0,0.1)">
-          Richner BMS
-        </div>
+        <button id="label-sabag"
+          style="padding:10px 22px;border-radius:2px;border:2px solid #2E6DB4;background:#2E6DB4;color:#FFFFFF;font-size:14px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;-webkit-appearance:none;touch-action:manipulation"
+          onclick="setKonkurrent('Sabag')">Sabag</button>
+        <button id="label-richner"
+          style="padding:10px 22px;border-radius:2px;border:2px solid #E0E6ED;background:#FFFFFF;color:#555555;font-size:14px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;-webkit-appearance:none;touch-action:manipulation"
+          onclick="setKonkurrent('Richner BMS')">Richner BMS</button>
       </div>
     </div>
 
@@ -216,7 +208,7 @@ textarea.inp{min-height:64px;resize:vertical}
     </label>
     <input type="file" id="file-input-offerte" accept=".pdf,.csv,.txt" 
       style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden"
-      onchange="handleOfferteFile(this.files[0])">
+      onchange="handleOfferteFile(event.target.files[0])">
 
     <div id="offerte-status"></div>
     <div id="offerte-debug"></div>
@@ -725,8 +717,11 @@ function parseRichnerText(txt){
 // PDF TEXT EXTRACTION (pdf.js)
 // ================================================================
 async function extractPdfText(file){
-  pdfjsLib.GlobalWorkerOptions.workerSrc=
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  if(typeof pdfjsLib === 'undefined') {
+      setStatus('offerte-status','PDF-Bibliothek lädt noch — bitte kurz warten und nochmals versuchen.','warn');
+      return;
+    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   const buf=await file.arrayBuffer();
   const pdf=await pdfjsLib.getDocument({data:buf}).promise;
   let full='';
@@ -1118,17 +1113,7 @@ function initApp() {
     'OF-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-001';
   buildStepBar();
 
-  // Konkurrent-Schalter: addEventListener für maximale iOS-Kompatibilität
-  const ls = document.getElementById('label-sabag');
-  const lr = document.getElementById('label-richner');
-  if(ls) {
-    ls.addEventListener('click', function(){ setKonkurrent('Sabag'); });
-    ls.addEventListener('touchend', function(e){ e.preventDefault(); setKonkurrent('Sabag'); });
-  }
-  if(lr) {
-    lr.addEventListener('click', function(){ setKonkurrent('Richner BMS'); });
-    lr.addEventListener('touchend', function(e){ e.preventDefault(); setKonkurrent('Richner BMS'); });
-  }
+  // Konkurrent-Schalter via onclick auf <button> — zuverlässigste Methode
 }
 document.addEventListener('DOMContentLoaded', initApp);
 // Fallback für iOS file:// wo DOMContentLoaded manchmal zu früh feuert
